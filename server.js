@@ -83,7 +83,7 @@ app.post("/api/todos", checkAuthenticated, (req, res) => {
             todos: [req.body.todo]
         })
     }
-    res.send(req.body.todo)
+    res.send(todos.find(todo => todo.id == userId))
 })
 
 app.get("/api/todos/list", (req, res) => {
