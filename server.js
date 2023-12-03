@@ -21,13 +21,13 @@ app.use(passport.session())
 const initPassport = require("./passportConfig")
 initPassport(passport, getUserByUsername, getUserById)
 
-const users = [{
-    id: '1701619424019',
-    username: 'chuck',
-    password: '$2b$10$gq1DSCYzxIuahW1J3Kj6weXWmZavh6IFRY707leYYddMckk.enlW6'
-}]
+const users = []
 
 const todos = []
+
+app.get("/", (req, res) => {
+
+})
 
 app.post("/api/user/register", checkNotAuthenticated, async (req, res) => {
     try {
