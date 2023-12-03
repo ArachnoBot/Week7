@@ -3,29 +3,39 @@ const app = express()
 const bcrypt = require("bcrypt")
 const passport = require("passport")
 const session = require("express-session")
+const cookies = require("cookie-parser");
 
+app.use(cookies());
 app.use(express.json())
 app.use(session({
     secret: "bjkhguyjkasefjilnsfdjhgvzsc",
     resave: false,
     saveUninitialized: false
 }))
+
+app.listen(3000)
+
 app.use(passport.initialize())
 app.use(passport.session())
 
 const initPassport = require("./passportConfig")
 initPassport(passport, getUserByUsername, getUserById)
 
-users = []
+const users = [{
+    id: '1701619424019',
+    username: 'chuck',
+    password: '$2b$10$gq1DSCYzxIuahW1J3Kj6weXWmZavh6IFRY707leYYddMckk.enlW6'
+}]
 
-app.post("/api/user/register", async (req, res) => {
+const todos = []
+
+app.post("/api/user/register", checkNotAuthenticated, async (req, res) => {
     try {
-        double = users.find(user => user.username == req.body.username)
+        const double = users.find(user => user.username == req.body.username)
         if (double) {
             return res.sendStatus(400)
         }
         const hashedPassword = await bcrypt.hash(req.body.password, 10)
-        console.log(hashedPassword)
         newUser = {
             id: Date.now().toString(),
             username: req.body.username,
@@ -43,20 +53,43 @@ app.get("/api/user/list", (req, res) => {
     res.send(users)
 })
 
-app.post('/api/user/login', passport.authenticate('local', {
+app.post('/api/user/login', checkNotAuthenticated, passport.authenticate('local', {
     successRedirect: "/success",
     failureRedirect: "/failure",
 }))
 
 app.get("/success", (req, res) => {
-    res.sendStatus(200)
+    // Isnt this already done automatically?
+    res.cookie("connect.sid", req.cookies["connect.sid"]).sendStatus(200)
 })
 
 app.get("/failure", (req, res) => {
     res.sendStatus(401)
 })
 
-app.listen(3000)
+app.get("/api/secret", checkAuthenticated, (req, res) => {
+    res.sendStatus(200)
+})
+
+app.post("/api/todos", checkAuthenticated, (req, res) => {
+    const userId = req.session.passport.user
+    const todoList = todos.find(todo => todo.id == userId)
+
+    if (todoList) {
+        todoList.todos.push(req.body.todo)
+    } else {
+        todos.push({
+            id: userId,
+            todos: [req.body.todo]
+        })
+    }
+
+    res.sendStatus(200)
+})
+
+app.get("/api/todos/list", checkAuthenticated, (req, res) => {
+    res.send(todos)
+})
 
 function checkAuthenticated(req, res, next) {
     if (req.isAuthenticated()) {
@@ -66,6 +99,13 @@ function checkAuthenticated(req, res, next) {
     return res.sendStatus(401)
 }
 
+function checkNotAuthenticated(req, res, next) {
+    if (req.isAuthenticated()) {
+        console.log("stop")
+        return res.redirect("/")
+    }
+    return next()
+}
 
 function getUserByUsername(username) {
     return users.find(user => user.username == username)
