@@ -26,7 +26,7 @@ const users = []
 const todos = []
 
 app.get("/", (req, res) => {
-
+    res.sendStatus(200)
 })
 
 app.post("/api/user/register", checkNotAuthenticated, async (req, res) => {
